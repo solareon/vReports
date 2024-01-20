@@ -1,4 +1,3 @@
----comment
 ---@return table | any
 LoadLeaderboard = function()
     local leaderboardJson = LoadResourceFile(GetCurrentResourceName(), "data.json")
@@ -11,6 +10,27 @@ end
 SaveLeaderboard = function(newLeaderboardTable)
     SaveResourceFile(GetCurrentResourceName(), "data.json", json.encode(newLeaderboardTable, { indent = false }), -1)
 end
+
+---@param targetIdentifiers table
+---@param sourceIdentifiers table
+---@return boolean
+LoopThroughIdentifiers = function(targetIdentifiers, sourceIdentifiers)
+    if not targetIdentifiers or not sourceIdentifiers then
+        return false
+    end
+
+    for _, targetIdentifier in ipairs(targetIdentifiers) do
+        for _, sourceIdentifier in ipairs(sourceIdentifiers) do
+            if string.find(targetIdentifier, sourceIdentifier) then
+                Debug("Identifier found: ", targetIdentifier)
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
 
 ShowNotification = function(data)
     if not data then return Debug("[func:server:ShowNotification] first param is null.") end
@@ -30,6 +50,28 @@ GetDiscordID = function(source)
     return returnValue
 end
 
+---@param source any
+---@return string
+GetLicenseIdentifier = function(source)
+    local returnValue = nil
+    local identifiers = GetPlayerIdentifiers(source)
+
+    for i = 1, #identifiers do
+        local identifier = identifiers[i]
+        if string.find(identifier, "license:") then
+            returnValue = identifier:gsub("license:", "")
+            break
+        end
+    end
+
+    if not returnValue then
+        Debug("[func:GetLicenseIdentifier] License couldn't be found.")
+        return ""
+    end
+
+    return returnValue
+end
+
 GetPlayerIdentifiersWithoutIP = function(player)
     local identifiers = GetPlayerIdentifiers(player)
     local cleanedIdentifiers = {}
@@ -45,7 +87,7 @@ end
 VersionCheck = function(repository)
     local resource = GetInvokingResource() or GetCurrentResourceName()
 
-    local currentVersion = 'v1.0.0'
+    local currentVersion = 'v1.0.5'
 
     if currentVersion then
         currentVersion = currentVersion:match('%d+%.%d+%.%d+')
@@ -88,7 +130,7 @@ end
 
 if not LoadResourceFile(GetCurrentResourceName(), 'web/dist/index.html') then
     local err =
-    'Unable to load UI. Build vHud or download the latest release.\n https://github.com/vipexv/vReports/releases/latest'
+    'Unable to load UI. Build the NUI or download the latest release.\n https://github.com/vipexv/vReports/releases/latest'
     print(err)
 end
 

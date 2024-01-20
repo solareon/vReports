@@ -14,12 +14,9 @@ RegisterCommand(Config.ReportMenuCommand, function()
         end
         Script.state.settingsLoaded = true
     end
+
     UIMessage("nui:state:playerdata", PlayerData)
     UIMessage("nui:state:myreports", MyReports)
-
-    if PlayerData.isStaff then
-        TriggerServerEvent("reportmenu:server:cb:leaderboard")
-    end
 
     ToggleNuiFrame(true)
     Debug("[command:show-nui] ToggleNuiFrame called and set to true.")

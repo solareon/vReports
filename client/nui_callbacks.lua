@@ -1,16 +1,8 @@
-RegisterNUICallback('hideFrame', function(_, cb)
+RegisterNuiCallback('hideFrame', function(_, cb)
     ToggleNuiFrame(false)
     UIMessage("nui:resetstates")
     Debug('[nuicb:hideFrame] called')
     cb({})
-end)
-
--- ex.
-RegisterNUICallback('getClientData', function(data, cb)
-    local curCoords = GetEntityCoords(PlayerPedId())
-
-    local retData <const> = { x = curCoords.x, y = curCoords.y, z = curCoords.z }
-    cb(retData)
 end)
 
 RegisterNuiCallback("reportmenu:nuicb:sendreport", function(data, cb)
@@ -19,15 +11,45 @@ RegisterNuiCallback("reportmenu:nuicb:sendreport", function(data, cb)
 
     data.playerName = GetPlayerName(PlayerId())
 
+    if data.reportNearestPlayers then
+        data.nearestPlayers = {}
+        local players = GetActivePlayers()
+        local srcPlayerId = PlayerId()
+        local srcPed = PlayerPedId()
+        local srcCoords = GetEntityCoords(srcPed)
+
+        for i = 1, #players do
+            local playerId = players[i]
+            local playerPed = GetPlayerPed(playerId)
+            local playerCoords = GetEntityCoords(playerPed)
+
+            local distance = #(srcCoords - playerCoords)
+
+            if playerId ~= srcPlayerId and distance <= Config.MaxDistance then
+                data.nearestPlayers[#data.nearestPlayers + 1] = {
+                    id = GetPlayerServerId(playerId),
+                    name = GetPlayerName(playerId),
+                    distance = math.floor(distance),
+                }
+
+                Debug("[reportmenu:nuicb:sendreport] Player near us found: ", json.encode(data.nearestPlayers))
+            end
+        end
+    end
+
     TriggerServerEvent("reportmenu:server:report", data)
+    ShowNotification({
+        title = "Report Menu",
+        description = ("Your new report has been submitted, do /%s for more info."):format(Config.ReportMenuCommand),
+    })
     cb({})
 end)
 
 RegisterNuiCallback("reportmenu:nuicb:delete", function(data, cb)
     if not data then return Debug("[reportmenu:nuicb:delete] first param is null.") end
 
-    -- if data.isMyReportsPage and MyReports[data.randomKey] then
-    --     MyReports[data.randomKey] = nil
+    -- if data.isMyReportsPage and MyReports[data.reportId] then
+    --     MyReports[data.reportId] = nil
     --     UIMessage("nui:state:myreports", MyReports)
     --     Debug("(reportmenu:nuicb:delete) Report deleted on the client sided `MyReports` table.")
     -- end
@@ -65,8 +87,13 @@ RegisterNuiCallback("reportmenu:nuicb:bring", function(data, cb)
     cb({})
 end)
 
-RegisterNUICallback("reportmenu:nuicb:refresh", function(data, cb)
+RegisterNuiCallback("reportmenu:nuicb:refresh", function(data, cb)
     Debug("[reportmenu:nuicb:refresh] Called.")
     TriggerServerEvent("reportmenu:server:cb:reports")
     cb({})
+end)
+
+RegisterNuiCallback("reportmenu:nuicb:sendmessage", function(data, cb)
+    Debug("[reportmenu:nuicb:sendmessage] data: ", json.encode(data))
+    TriggerServerEvent("reportmenu:server:sendmessage", data)
 end)
